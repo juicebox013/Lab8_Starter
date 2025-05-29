@@ -54,6 +54,21 @@ function initializeServiceWorker() {
   // B5. TODO - In the event that the service worker registration fails, console
   //            log that it has failed.
   // STEPS B6 ONWARDS WILL BE IN /sw.js
+  if("serviceWorker" in navigator) {
+    window.addEventListener('load', async () => {
+      await navigator.serviceWorker.register('./sw.js').then(
+        (registration) => {
+          console.log('service worker registerd:', registration);
+        },
+        (error) => {
+          console.error(`service worker failed: ${error}`);
+        }
+      );
+    });
+  }
+  else {
+    console.error('not supported');
+  }
 }
 
 /**
@@ -71,7 +86,12 @@ async function getRecipes() {
   /**************************/
   // The rest of this method will be concerned with requesting the recipes
   // from the network
+  const storageRecipes = localStorage.getItem('recipes');
+  if(storageRecipes) {
+    return JSON.parse(storageRecipes);
+  }
   // A2. TODO - Create an empty array to hold the recipes that you will fetch
+  const fetchedRecipes = [];
   // A3. TODO - Return a new Promise. If you are unfamiliar with promises, MDN
   //            has a great article on them. A promise takes one parameter - A
   //            function (we call these callback functions). That function will
@@ -100,6 +120,32 @@ async function getRecipes() {
   //            resolve() method.
   // A10. TODO - Log any errors from catch using console.error
   // A11. TODO - Pass any errors to the Promise's reject() function
+
+  //step 3
+  return new Promise(async (resolve, reject) => {
+    //step 4
+    for (const url of RECIPE_URLS) {
+      //step 5
+      try {
+        //step 6
+        const response = await fetch(url);
+        //step 7
+        const recipes = await response.json();
+        //step 8
+        fetchedRecipes.push(recipes);
+        //step 9
+        if(fetchedRecipes.length === RECIPE_URLS.length) {
+          saveRecipesToStorage(fetchedRecipes);
+          resolve(fetchedRecipes);
+        }
+        //step 10
+      } catch (error) {
+        console.error(error);
+        //step 11
+        reject(error);
+      }
+    }
+  });
 }
 
 /**
